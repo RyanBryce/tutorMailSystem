@@ -1,8 +1,8 @@
 var express = require('express');
 var bodyParser = require('body-parser');
-var jwt = require('jsonwebtoken');
 var cors = require('cors');
 var request = require('request');
+var zoomToken = require("./controller/zoomToken.js")
 
 var app = express();
 
@@ -14,19 +14,12 @@ app.use(cors())
 app.use(bodyParser.json());
 
 //This automatically creates header, and returns JWT
-var payload = {
-  iss: process.env.ZOOMAPIKEY,
-  exp: ((new Date()).getTime() + 300000)
-};
-
-var token = jwt.sign(payload, process.env.ZOOMSECRET);
-console.log(token)
 
 //this is used for creating an auth preflight header to grab your account info from Zoom.us.
 var options = {
   url: `https://api.zoom.us/v2/users/`,
   headers: {
-    'Authorization': `Bearer${token}`
+    'Authorization': `Bearer${zoomToken}`
   }
 };
 
@@ -38,7 +31,6 @@ function getUserId(cb) {
     userId = info.users[0].id
     cb()
   })
-
 }
 
 //url for creating a meeting
@@ -49,13 +41,14 @@ getUserId(function(){
   var options = {
     url: `https://api.zoom.us/v2/users/${userId}/meetings`,
     headers: {
-      'Authorization': `Bearer${token}`
+      'Authorization': `Bearer${zoomToken}`
     },
     method: "POST",
     body: JSON.stringify({
       topic: "ryans node hit"
     })
   };
+  
   request(options, function (err, response, body) {
     var info = JSON.parse(body);
     console.log(info)
@@ -63,7 +56,7 @@ getUserId(function(){
 })
 
 
-require('./routes/routes.js')(app)
+require('./routes/htmlRoutes.js')(app)
 
 app.listen(port, () => {
   console.log(`running on port ${port}`);
